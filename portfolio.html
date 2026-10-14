@@ -1174,12 +1174,12 @@
       border-radius: 1rem;
       overflow: hidden;
       background: #0d1117;
-      height: 200px
+      height: 152px
     }
 
     .mv iframe {
       width: 100%;
-      height: 200px;
+      height: 152px;
       border: 0;
       display: block
     }
@@ -1812,14 +1812,14 @@
       <button class="mi" id="mnext" type="button" hidden aria-label="Next"><svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M16 5h2v14h-2zM4 5l11 7-11 7z" />
         </svg></button>
-      <button class="mi" id="mmute" type="button" aria-label="Mute"><svg viewBox="0 0 24 24" aria-hidden="true">
+      <button class="mi" id="mmute" type="button" hidden aria-label="Mute"><svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 9v6h4l5 4V5L8 9z" />
           <path d="M16 8.5a5 5 0 010 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg></button>
-      <input class="mvol" id="mvol" type="range" min="0" max="100" value="60" aria-label="Volume">
+      <input class="mvol" id="mvol" hidden type="range" min="0" max="100" value="60" aria-label="Volume">
     </div>
-    <a class="spl" id="mlink" target="_blank" rel="noopener" hidden>Open on YouTube</a>
-    <p class="mcr">Audio streams from YouTube's official player. Nothing is hosted on this site.</p>
+    <a class="spl" id="mlink" target="_blank" rel="noopener" hidden>Open on Spotify</a>
+    <p class="mcr">Audio streams from Spotify's official player. Nothing is hosted on this site.</p>
   </div>
 
   <header class="hero" id="top">
@@ -2087,47 +2087,40 @@
       function lk(tip, href, svg, ext, extra) { return '<a class="ic" data-tip="' + tip + '" aria-label="' + tip + '" href="' + href + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + (extra || '') + '>' + svg + '</a>' }
       var dockHTML = '<div class="dock">' + lk('GitHub', 'https://github.com/hpinmetaverse', GH, 1) + lk('LinkedIn', 'https://www.linkedin.com/in/hpinmetaverse/', LI, 1) + lk('Email', 'mailto:himanshupatil1320@gmail.com', ML, 0) + '<i class="dv"></i><button class="ic sp" type="button" data-tip="Play my song" aria-label="Play my song">' + SP + '</button></div>';
       document.querySelectorAll('[data-dock]').forEach(function (d) { d.innerHTML = dockHTML });
-      // radio: YouTube IFrame Player API, started only by the visitor
-      var VIDEO_ID = 'CecPpb-kNUc'; // YouTube video ID of the song; it loops
+      // radio: Spotify IFrame API, started only by the visitor
+      var TRACK = '7DfFc7a6Rwfi3YQMRbDMau';
       var PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>', PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
-      var mp = document.getElementById('mp'), yt = null, ready = false;
+      var mp = document.getElementById('mp'), ctrl = null, ready = false, started = false, dur = 0;
       function g(i) { return document.getElementById(i) }
       function note(m) { g('mm').textContent = m || '' }
-      function fmt(t) { t = Math.max(0, t | 0); return (t / 60 | 0) + ':' + ('0' + t % 60).slice(-2) }
-      function upd() { if (!ready) return; var d = yt.getDuration() || 0, c = yt.getCurrentTime() || 0; if (d) { g('mbar').value = c / d * 1000; g('mtm').textContent = fmt(c) + ' / ' + fmt(d) } }
+      function fmt(ms) { var t = Math.max(0, ms / 1000 | 0); return (t / 60 | 0) + ':' + ('0' + t % 60).slice(-2) }
       function initPlayer() {
-        if (yt) return;
-        if (!VIDEO_ID) { note('Song coming soon.'); return }
-        var lk = g('mlink'); lk.href = 'https://www.youtube.com/watch?v=' + VIDEO_ID; lk.hidden = false;
-        if (location.protocol === 'file:') { note('Open this page through http://localhost or your hosted site. YouTube will not play inside a file opened straight from disk.'); return }
+        if (started) return; started = true;
+        var lk = g('mlink'); lk.href = 'https://open.spotify.com/track/' + TRACK; lk.hidden = false;
+        g('mtt').textContent = 'Thinkin Bout You'; g('mtm').textContent = 'Frank Ocean';
         note('Loading player...');
-        var fail = setTimeout(function () { if (!ready) note('The player could not load here. Use the link below to open the song on YouTube.') }, 5000);
-        function build() {
-          yt = new YT.Player('ytp', {
-            width: '100%', height: '200', videoId: VIDEO_ID, playerVars: { autoplay: 1, loop: 1, playlist: VIDEO_ID, controls: 0, rel: 0, playsinline: 1, modestbranding: 1, disablekb: 1 }, events: {
-              onReady: function () { ready = true; clearTimeout(fail); note(''); yt.setVolume(+g('mvol').value); yt.playVideo(); setTimeout(function () { if (yt.getPlayerState() !== 1) { yt.mute(); yt.playVideo(); g('mmute').classList.add('off') } }, 1600); setInterval(upd, 500) },
-              onStateChange: function (e) {
-                g('mplay').innerHTML = e.data === 1 ? PAUSE : PLAY; g('mplay').setAttribute('aria-label', e.data === 1 ? 'Pause' : 'Play');
-                document.querySelectorAll('.sp').forEach(function (b) { b.classList.toggle('on', e.data === 1) });
-                var d = yt.getVideoData && yt.getVideoData(); if (d && d.title) g('mtt').textContent = d.title
-              },
-              onError: function (e) { note(e.data === 101 || e.data === 150 ? 'The video owner has turned off embedding for this song.' : e.data === 153 ? 'YouTube could not verify this page. Open it through http://localhost or your hosted site, not as a file.' : 'This song could not be played right now.') }
-            }
-          });
-        }
-        if (window.YT && YT.Player) build();
-        else { window.onYouTubeIframeAPIReady = build; var sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(sc) }
+        var fail = setTimeout(function () { if (!ready) note('The player could not load here. Use the link below to open the song on Spotify.') }, 6000);
+        window.onSpotifyIframeApiReady = function (API) {
+          API.createController(g('ytp'), { uri: 'spotify:track:' + TRACK, width: '100%', height: 152 }, function (c) {
+            ctrl = c;
+            c.addListener('ready', function () { ready = true; clearTimeout(fail); note('') });
+            c.addListener('playback_update', function (e) {
+              var d = e.data; dur = d.duration || 0;
+              g('mplay').innerHTML = d.isPaused ? PLAY : PAUSE; g('mplay').setAttribute('aria-label', d.isPaused ? 'Play' : 'Pause');
+              document.querySelectorAll('.sp').forEach(function (b) { b.classList.toggle('on', !d.isPaused) });
+              if (dur) { g('mbar').value = d.position / dur * 1000; g('mtm').textContent = fmt(d.position) + ' / ' + fmt(dur) }
+              if (d.isPaused && dur && d.position >= dur - 500) c.restart()
+            })
+          })
+        };
+        var sc = document.createElement('script'); sc.src = 'https://open.spotify.com/embed/iframe-api/v1'; sc.async = true; document.head.appendChild(sc);
       }
       function openRadio() { mp.hidden = false; initPlayer() }
-      function closeRadio() { mp.hidden = true; if (ready) yt.pauseVideo() }
+      function closeRadio() { mp.hidden = true; if (ctrl) ctrl.pause() }
       function toggleRadio() { mp.hidden ? openRadio() : closeRadio() }
       g('mpx').addEventListener('click', closeRadio);
-      g('mplay').addEventListener('click', function () { if (ready) yt.getPlayerState() === 1 ? yt.pauseVideo() : yt.playVideo() });
-      g('mprev').addEventListener('click', function () { if (ready) yt.previousVideo() });
-      g('mnext').addEventListener('click', function () { if (ready) yt.nextVideo() });
-      g('mmute').addEventListener('click', function () { if (!ready) return; var m = yt.isMuted(); m ? yt.unMute() : yt.mute(); this.classList.toggle('off', !m) });
-      g('mvol').addEventListener('input', function () { if (!ready) return; yt.setVolume(+this.value); if (yt.isMuted() && +this.value > 0) { yt.unMute(); g('mmute').classList.remove('off') } });
-      g('mbar').addEventListener('input', function () { if (ready) yt.seekTo(this.value / 1000 * (yt.getDuration() || 0), true) });
+      g('mplay').addEventListener('click', function () { if (ctrl) ctrl.togglePlay() });
+      g('mbar').addEventListener('input', function () { if (ctrl && dur) ctrl.seek(this.value / 1000 * dur / 1000) });
 
       document.querySelectorAll('.sp').forEach(function (b) { b.addEventListener('click', toggleRadio) });
       // resume: buttons open the Drive file
